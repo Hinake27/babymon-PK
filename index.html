@@ -1,0 +1,994 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>寶可夢對戰遊戲</title>
+    <style>
+        /* 基礎樣式 */
+        body {
+            font-family: Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background: #f0f0f0;
+        }
+
+        .game-container {
+            width: 800px;
+            margin: 20px auto;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 0 10px rgba(0,0,0,0.1);
+            padding: 20px;
+        }
+
+        .battle-area {
+            height: 300px;
+            background: linear-gradient(#87CEEB, #98FB98);
+            border-radius: 10px;
+            position: relative;
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+
+        .pokemon {
+            width: 120px;
+            height: 120px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: absolute;
+            transition: all 0.3s;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        .enemy { top: 30px; right: 100px; }
+        .player { bottom: 30px; left: 100px; }
+
+        .stats-box {
+            background: #f8f9fa;
+            border-radius: 8px;
+            padding: 10px;
+            margin-bottom: 10px;
+        }
+
+        .hp-bar {
+            width: 100%;
+            height: 20px;
+            background: #ddd;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 5px 0;
+        }
+
+        .hp-fill {
+            height: 100%;
+            background: #4CAF50;
+            transition: width 0.3s;
+        }
+
+        .exp-bar {
+            height: 5px;
+            background: #ddd;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-top: 5px;
+        }
+
+        .exp-fill {
+            height: 100%;
+            background: #3498db;
+            transition: width 0.3s;
+        }
+
+        .money-display {
+            color: #FFD700;
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        /* 技能按鈕樣式 */
+        .moves-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .move-btn {
+            padding: 15px;
+            border: none;
+            border-radius: 8px;
+            background: #3498db;
+            color: white;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .move-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            background: #2980b9;
+        }
+
+        .move-btn:disabled {
+            background: #bdc3c7;
+            cursor: not-allowed;
+        }
+
+        /* 商店樣式 */
+        .shop-btn {
+            position: fixed;
+            bottom: 20px;
+            left: 20px;
+            padding: 15px 30px;
+            background: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.3s;
+        }
+
+        .shop-btn:hover {
+            background: #45a049;
+            transform: translateY(-2px);
+        }
+
+        .shop-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .shop-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 15px;
+            border-bottom: 1px solid #eee;
+            margin: 10px 0;
+        }
+
+        .shop-item button {
+            padding: 8px 15px;
+            background: #3498db;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-left: 10px;
+        }
+
+        .shop-item button:hover {
+            background: #2980b9;
+        }
+
+        /* 遊戲結束模態框樣式 */
+        .game-over-modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            text-align: center;
+            min-width: 300px;
+        }
+
+        .score-display {
+            font-size: 28px;
+            margin: 20px 0;
+            color: #4CAF50;
+            font-weight: bold;
+        }
+
+        .stats-list {
+            text-align: left;
+            margin: 20px 0;
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        /* 管理員相關樣式 */
+        .admin-login-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 20px;
+            background: #34495e;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            z-index: 998;
+        }
+
+        .admin-login-btn:hover {
+            background: #2c3e50;
+        }
+
+        .admin-panel {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1000;
+            min-width: 300px;
+        }
+
+        .admin-btn-group {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 15px;
+        }
+
+        .admin-btn-group button {
+            padding: 10px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+            transition: background 0.3s;
+        }
+
+        .admin-btn-group button:hover {
+            background: #2980b9;
+        }
+
+        .admin-btn-group button.close-btn {
+            grid-column: span 2;
+            background: #e74c3c;
+        }
+
+        .admin-btn-group button.close-btn:hover {
+            background: #c0392b;
+        }
+
+        /* 共用樣式 */
+        .message {
+            text-align: center;
+            padding: 10px;
+            margin: 10px 0;
+            background: #f8f9fa;
+            border-radius: 5px;
+            min-height: 40px;
+            font-weight: bold;
+        }
+
+        .overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 999;
+        }
+
+        .close-btn {
+            padding: 10px 20px;
+            background: #e74c3c;
+            color: white;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-top: 15px;
+        }
+
+        .close-btn:hover {
+            background: #c0392b;
+        }
+
+        /* 寶可夢屬性顏色 */
+        .type-normal { background: #A8A878; }
+        .type-fire { background: #F08030; }
+        .type-water { background: #6890F0; }
+        .type-electric { background: #F8D030; }
+        .type-grass { background: #78C850; }
+
+        /* 模態框樣式 */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 0 15px rgba(0,0,0,0.2);
+            z-index: 1001;
+            text-align: center;
+        }
+
+        .modal input {
+            margin: 10px 0;
+            padding: 8px;
+            width: 200px;
+        }
+
+        .modal button {
+            margin: 5px;
+            padding: 8px 15px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            background: #3498db;
+            color: white;
+        }
+
+        .modal button:hover {
+            background: #2980b9;
+        }
+    </style>
+</head>
+<!-- HTML第一部分結束 -->
+<body>
+    <div class="game-container">
+        <div class="battle-area" id="battleArea">
+            <div class="pokemon enemy">
+                <div>Lv.<span id="enemy-level">5</span></div>
+            </div>
+            <div class="pokemon player">
+                <div>Lv.<span id="player-level">5</span></div>
+            </div>
+        </div>
+
+        <div class="stats-box">
+            <div class="money-display">金幣: <span id="money-display">0</span></div>
+            <div>敵人: <span id="enemy-name"></span></div>
+            <div class="hp-bar">
+                <div id="enemy-hp" class="hp-fill"></div>
+            </div>
+            <div>HP: <span id="enemy-hp-text"></span></div>
+        </div>
+
+        <div class="stats-box">
+            <div>玩家: <span id="player-name"></span></div>
+            <div class="hp-bar">
+                <div id="player-hp" class="hp-fill"></div>
+            </div>
+            <div>HP: <span id="player-hp-text"></span></div>
+            <div class="exp-bar">
+                <div id="exp-fill" class="exp-fill"></div>
+            </div>
+        </div>
+
+        <div id="message" class="message"></div>
+        <div id="moves" class="moves-grid"></div>
+    </div>
+
+    <!-- 商店按鈕和面板 -->
+    <button onclick="showShop()" class="shop-btn">商店</button>
+
+    <div id="shop-panel" class="shop-panel">
+        <h2>商店</h2>
+        <div class="shop-item">
+            <div>
+                <strong>PP回復藥水</strong>
+                <br>
+                <small>回復1點PP</small>
+            </div>
+            <div>
+                <span>50金幣</span>
+                <button onclick="buyItem('pp')">購買</button>
+            </div>
+        </div>
+        <div class="shop-item">
+            <div>
+                <strong>HP回復藥水</strong>
+                <br>
+                <small>回復30%HP</small>
+            </div>
+            <div>
+                <span>100金幣</span>
+                <button onclick="buyItem('hp')">購買</button>
+            </div>
+        </div>
+        <button onclick="closeShop()" class="close-btn">關閉商店</button>
+    </div>
+
+    <!-- 遊戲結束模態框 -->
+    <div id="game-over-modal" class="game-over-modal">
+        <h2>遊戲結束</h2>
+        <div class="score-display">
+            總分: <span id="final-score">0</span>
+        </div>
+        <div class="stats-list">
+            <div>擊敗敵人數: <span id="enemies-defeated">0</span></div>
+            <div>獲得金幣: <span id="total-money">0</span></div>
+            <div>最高等級: <span id="max-level">0</span></div>
+        </div>
+        <button onclick="resetGame()" class="close-btn">重新開始</button>
+    </div>
+
+    <!-- 管理員介面 -->
+    <button onclick="showAdminLogin()" class="admin-login-btn">管理員登入</button>
+
+    <div id="admin-panel" class="admin-panel">
+        <h3>管理員控制台</h3>
+        <div class="admin-btn-group">
+            <button onclick="toggleInfiniteHP()">無限血量</button>
+            <button onclick="toggleOneHitKO()">一擊必殺</button>
+            <button onclick="addExperience()">增加經驗</button>
+            <button onclick="instantLevelUp()">直接升級</button>
+            <button onclick="toggleGodMode()">無敵模式</button>
+            <button onclick="closeAdminPanel()" class="close-btn">關閉面板</button>
+        </div>
+    </div>
+
+    <div id="admin-modal" class="modal">
+        <h3>管理員登入</h3>
+        <div style="margin: 15px 0;">
+            <input type="password" id="admin-password" placeholder="請輸入密碼">
+        </div>
+        <div>
+            <button onclick="checkAdminPassword()">確認</button>
+            <button onclick="hideAdminLogin()">取消</button>
+        </div>
+    </div>
+
+    <!-- 遮罩層 -->
+    <div id="overlay" class="overlay"></div>
+
+<script>
+// 寶可夢數據
+const POKEMON_DATA = {
+    pikachu: {
+        name: '皮卡丘',
+        type: 'electric',
+        baseHp: 100,
+        moves: [
+            { name: '電擊', power: 20, pp: 10, maxPp: 10, type: 'electric', description: '發射電流攻擊對手' },
+            { name: '十萬伏特', power: 35, pp: 5, maxPp: 5, type: 'electric', description: '發射強大的電流' },
+            { name: '電光一閃', power: 15, pp: 15, maxPp: 15, type: 'normal', description: '快速衝向對手' },
+            { name: '治癒', power: 0, pp: 3, maxPp: 3, isHeal: true, type: 'heal', description: '回復HP' }
+        ]
+    },
+    charmander: {
+        name: '小火龍',
+        type: 'fire',
+        baseHp: 95,
+        moves: [
+            { name: '火花', power: 20, pp: 10, maxPp: 10, type: 'fire', description: '噴射火花攻擊' },
+            { name: '噴射火焰', power: 35, pp: 5, maxPp: 5, type: 'fire', description: '噴射強大的火焰' },
+            { name: '抓擊', power: 15, pp: 15, maxPp: 15, type: 'normal', description: '用爪子抓擊對手' },
+            { name: '烈焰衝擊', power: 30, pp: 8, maxPp: 8, type: 'fire', description: '全身覆蓋火焰衝撞' }
+        ]
+    },
+    squirtle: {
+        name: '傑尼龜',
+        type: 'water',
+        baseHp: 105,
+        moves: [
+            { name: '水槍', power: 20, pp: 10, maxPp: 10, type: 'water', description: '噴射水流攻擊' },
+            { name: '泡沫', power: 25, pp: 8, maxPp: 8, type: 'water', description: '發射泡沫攻擊' },
+            { name: '撞擊', power: 15, pp: 15, maxPp: 15, type: 'normal', description: '衝撞對手' },
+            { name: '高壓水炮', power: 35, pp: 5, maxPp: 5, type: 'water', description: '發射高壓水流' }
+        ]
+    }
+};
+
+// 遊戲狀態
+const game = {
+    player: {
+        pokemon: null,
+        level: 5,
+        exp: 0,
+        nextLevelExp: 100,
+        money: 0,
+        stats: {
+            enemiesDefeated: 0,
+            totalMoney: 0,
+            maxLevel: 5
+        }
+    },
+    enemy: {
+        pokemon: null,
+        level: 5,
+        difficultyMultiplier: 1.0
+    },
+    isPlayerTurn: true,
+    adminMode: {
+        infiniteHP: false,
+        oneHitKO: false,
+        godMode: false
+    }
+};
+
+// 屬性相剋表
+const TYPE_CHART = {
+    normal: { normal: 1, fire: 1, water: 1, electric: 1 },
+    fire: { normal: 1, fire: 0.5, water: 0.5, electric: 1 },
+    water: { normal: 1, fire: 2, water: 0.5, electric: 1.5 },
+    electric: { normal: 1, fire: 1, water: 2, electric: 0.5 }
+};
+
+<!-- JavaScript第一部分結束 -->
+</script>
+
+<script>
+// 管理員相關變數
+let isAdminLoggedIn = false;
+
+// 初始化遊戲
+function initGame() {
+    game.player.pokemon = createPokemon(POKEMON_DATA.pikachu, game.player.level);
+    generateNewEnemy();
+    updateDisplay();
+    showMessage('戰鬥開始！');
+}
+
+// 創建寶可夢實例
+function createPokemon(base, level) {
+    const levelMultiplier = 1 + (level - 1) * 0.1;
+    return {
+        name: base.name,
+        type: base.type,
+        maxHp: Math.floor(base.baseHp * levelMultiplier),
+        currentHp: Math.floor(base.baseHp * levelMultiplier),
+        moves: base.moves.map(move => ({...move}))
+    };
+}
+
+// 生成敵人
+function generateNewEnemy() {
+    const enemyTypes = Object.values(POKEMON_DATA);
+    const randomEnemy = enemyTypes[Math.floor(Math.random() * enemyTypes.length)];
+    const enemyLevel = Math.floor(game.player.level * (0.8 + Math.random() * 0.4));
+    
+    game.enemy.pokemon = createPokemon(randomEnemy, enemyLevel);
+    game.enemy.level = enemyLevel;
+    
+    // 根據等級提升難度
+    game.enemy.difficultyMultiplier = 1.0 + (enemyLevel * 0.05);
+    
+    // 提升敵人的基礎屬性
+    game.enemy.pokemon.maxHp = Math.floor(game.enemy.pokemon.maxHp * game.enemy.difficultyMultiplier);
+    game.enemy.pokemon.currentHp = game.enemy.pokemon.maxHp;
+    
+    showMessage(`野生的${game.enemy.pokemon.name} (Lv.${enemyLevel})出現了！`);
+}
+
+// 計算傷害
+function calculateDamage(move, attacker, defender) {
+    if (game.adminMode.oneHitKO) return 9999;
+    
+    const baseDamage = move.power;
+    const typeMultiplier = TYPE_CHART[move.type][defender.type] || 1;
+    const levelMultiplier = 1 + (attacker === game.player.pokemon ? game.player.level : game.enemy.level) * 0.1;
+    const randomFactor = 0.85 + Math.random() * 0.15;
+    
+    let damage = Math.floor(baseDamage * typeMultiplier * levelMultiplier * randomFactor);
+    
+    if (attacker === game.enemy.pokemon) {
+        damage = Math.floor(damage * game.enemy.difficultyMultiplier);
+    }
+    
+    if (typeMultiplier > 1) {
+        showMessage('效果絕佳！');
+    } else if (typeMultiplier < 1) {
+        showMessage('效果不太好...');
+    }
+    
+    return damage;
+}
+
+// 使用技能
+async function useMove(moveIndex) {
+    if (!game.isPlayerTurn || game.player.pokemon.moves[moveIndex].pp <= 0) {
+        return;
+    }
+
+    const move = game.player.pokemon.moves[moveIndex];
+    move.pp--;
+    game.isPlayerTurn = false;
+    updateDisplay();
+
+    try {
+        if (move.isHeal) {
+            const healAmount = Math.floor(game.player.pokemon.maxHp * 0.3);
+            game.player.pokemon.currentHp = Math.min(
+                game.player.pokemon.maxHp,
+                game.player.pokemon.currentHp + healAmount
+            );
+            showMessage(`${game.player.pokemon.name}恢復了${healAmount}點HP！`);
+        } else {
+            const damage = calculateDamage(move, game.player.pokemon, game.enemy.pokemon);
+            game.enemy.pokemon.currentHp = Math.max(0, game.enemy.pokemon.currentHp - damage);
+            showMessage(`${game.player.pokemon.name}使用了${move.name}！造成${damage}點傷害！`);
+        }
+
+        updateDisplay();
+
+        if (!checkGameOver()) {
+            setTimeout(() => {
+                enemyTurn();
+            }, 1000);
+        }
+    } catch (error) {
+        console.error('戰鬥過程發生錯誤:', error);
+        game.isPlayerTurn = true;
+        updateDisplay();
+    }
+}
+
+// 敵人回合
+async function enemyTurn() {
+    try {
+        const availableMoves = game.enemy.pokemon.moves.filter(m => m.pp > 0);
+        if (availableMoves.length === 0) {
+            showMessage(`${game.enemy.pokemon.name}無法行動了！`);
+            game.isPlayerTurn = true;
+            updateDisplay();
+            return;
+        }
+
+        const move = availableMoves[Math.floor(Math.random() * availableMoves.length)];
+        move.pp--;
+
+        if (!game.adminMode.godMode) {
+            const damage = calculateDamage(move, game.enemy.pokemon, game.player.pokemon);
+            game.player.pokemon.currentHp = Math.max(0, game.player.pokemon.currentHp - damage);
+            showMessage(`${game.enemy.pokemon.name}使用了${move.name}！造成${damage}點傷害！`);
+        } else {
+            showMessage(`${game.enemy.pokemon.name}的攻擊無效！`);
+        }
+
+        if (game.adminMode.infiniteHP) {
+            game.player.pokemon.currentHp = game.player.pokemon.maxHp;
+        }
+
+        updateDisplay();
+
+        if (!checkGameOver()) {
+            game.isPlayerTurn = true;
+            updateDisplay();
+        }
+    } catch (error) {
+        console.error('敵人回合發生錯誤:', error);
+        game.isPlayerTurn = true;
+        updateDisplay();
+    }
+}
+
+// 檢查遊戲結束
+function checkGameOver() {
+    if (game.player.pokemon.currentHp <= 0 || game.enemy.pokemon.currentHp <= 0) {
+        const winner = game.player.pokemon.currentHp <= 0 ? 
+            game.enemy.pokemon.name : game.player.pokemon.name;
+        
+        showMessage(`戰鬥結束！${winner}獲勝！`);
+        
+        if (game.player.pokemon.currentHp > 0) {
+            const expGained = Math.floor(game.enemy.level * 20);
+            const moneyGained = Math.floor(game.enemy.level * 10 * game.enemy.difficultyMultiplier);
+            
+            game.player.money += moneyGained;
+            game.player.stats.enemiesDefeated++;
+            game.player.stats.totalMoney += moneyGained;
+            
+            setTimeout(() => {
+                showMessage(`獲得${expGained}點經驗值和${moneyGained}金幣！`);
+                game.player.exp += expGained;
+                updateDisplay();
+                
+                while (game.player.exp >= game.player.nextLevelExp) {
+                    levelUp();
+                }
+                
+                setTimeout(() => {
+                    if (confirm('要繼續對戰下一個敵人嗎？')) {
+                        recoverBetweenBattles();
+                        generateNewEnemy();
+                        game.isPlayerTurn = true;
+                        updateDisplay();
+                    }
+                }, 1000);
+            }, 1000);
+        } else {
+            showGameOver();
+        }
+        return true;
+    }
+    return false;
+}
+
+// 等級提升
+function levelUp() {
+    game.player.level++;
+    game.player.stats.maxLevel = Math.max(game.player.stats.maxLevel, game.player.level);
+    game.player.exp = 0;
+    game.player.nextLevelExp = Math.floor(game.player.nextLevelExp * 1.2);
+    
+    const oldMaxHp = game.player.pokemon.maxHp;
+    const newPokemon = createPokemon(POKEMON_DATA.pikachu, game.player.level);
+    game.player.pokemon.maxHp = newPokemon.maxHp;
+    game.player.pokemon.currentHp = newPokemon.maxHp;
+    
+    showMessage(`Level Up! ${game.player.level}級\n最大HP從${oldMaxHp}提升到${newPokemon.maxHp}！`);
+}
+
+// 回復函數
+function recoverBetweenBattles() {
+    const healAmount = Math.floor(game.player.pokemon.maxHp * 0.3);
+    game.player.pokemon.currentHp = Math.min(
+        game.player.pokemon.maxHp,
+        game.player.pokemon.currentHp + healAmount
+    );
+    
+    game.player.pokemon.moves.forEach(move => {
+        move.pp = Math.min(move.maxPp, move.pp + 1);
+    });
+    
+    showMessage(`休息了一下！回復了一些HP和PP！`);
+}
+
+// 商店相關函數
+function showShop() {
+    document.getElementById('shop-panel').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+function closeShop() {
+    document.getElementById('shop-panel').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+}
+
+function buyItem(type) {
+    const prices = {
+        pp: 50,
+        hp: 100
+    };
+    
+    if (game.player.money < prices[type]) {
+        showMessage('金幣不足！');
+        return;
+    }
+    
+    let purchased = false;
+    
+    if (type === 'pp') {
+        // 尋找第一個PP不滿的技能
+        for (let move of game.player.pokemon.moves) {
+            if (move.pp < move.maxPp) {
+                move.pp++;
+                purchased = true;
+                showMessage(`${move.name}的PP回復了1點！`);
+                break;
+            }
+        }
+        if (!purchased) {
+            showMessage('所有技能PP都是滿的！');
+            return;
+        }
+    } else if (type === 'hp') {
+        // 檢查是否滿血
+        if (game.player.pokemon.currentHp >= game.player.pokemon.maxHp) {
+            showMessage('HP已經是滿的！');
+            return;
+        }
+        // 回復30%的HP
+        const healAmount = Math.floor(game.player.pokemon.maxHp * 0.3);
+        const oldHp = game.player.pokemon.currentHp;
+        game.player.pokemon.currentHp = Math.min(
+            game.player.pokemon.maxHp,
+            game.player.pokemon.currentHp + healAmount
+        );
+        const actualHeal = game.player.pokemon.currentHp - oldHp;
+        purchased = true;
+        showMessage(`回復了${actualHeal}點HP！`);
+    }
+    
+    if (purchased) {
+        game.player.money -= prices[type];
+        updateDisplay();
+    }
+}
+
+// 遊戲結束相關函數
+function showGameOver() {
+    const finalScore = Math.floor(
+        game.player.stats.enemiesDefeated * 100 + 
+        game.player.stats.totalMoney * 0.5 + 
+        game.player.level * 50
+    );
+    
+    document.getElementById('final-score').textContent = finalScore;
+    document.getElementById('enemies-defeated').textContent = game.player.stats.enemiesDefeated;
+    document.getElementById('total-money').textContent = game.player.stats.totalMoney;
+    document.getElementById('max-level').textContent = game.player.level;
+    
+    document.getElementById('game-over-modal').style.display = 'block';
+    document.getElementById('overlay').style.display = 'block';
+}
+
+// 更新顯示函數
+function updateDisplay() {
+    document.getElementById('enemy-name').textContent = 
+        `${game.enemy.pokemon.name} [${game.enemy.pokemon.type}]`;
+    document.getElementById('player-name').textContent = 
+        `${game.player.pokemon.name} [${game.player.pokemon.type}]`;
+    document.getElementById('enemy-level').textContent = game.enemy.level;
+    document.getElementById('player-level').textContent = game.player.level;
+
+    const enemyHpPercent = (game.enemy.pokemon.currentHp / game.enemy.pokemon.maxHp) * 100;
+    const playerHpPercent = (game.player.pokemon.currentHp / game.player.pokemon.maxHp) * 100;
+    
+    document.getElementById('enemy-hp').style.width = `${enemyHpPercent}%`;
+    document.getElementById('player-hp').style.width = `${playerHpPercent}%`;
+    
+    document.getElementById('enemy-hp-text').textContent = 
+        `${game.enemy.pokemon.currentHp}/${game.enemy.pokemon.maxHp}`;
+    document.getElementById('player-hp-text').textContent = 
+        `${game.player.pokemon.currentHp}/${game.player.pokemon.maxHp}`;
+
+    const expPercent = (game.player.exp / game.player.nextLevelExp) * 100;
+    document.getElementById('exp-fill').style.width = `${expPercent}%`;
+    
+    document.getElementById('money-display').textContent = game.player.money;
+
+    updateMoveButtons();
+}
+
+// 更新技能按鈕
+function updateMoveButtons() {
+    const movesDiv = document.getElementById('moves');
+    movesDiv.innerHTML = '';
+    
+    game.player.pokemon.moves.forEach((move, index) => {
+        const btn = document.createElement('button');
+        btn.className = `move-btn type-${move.type}`;
+        btn.innerHTML = `
+            ${move.name}<br>
+            <small>類型: ${move.type}</small><br>
+            <small>PP: ${move.pp}/${move.maxPp}</small>
+        `;
+        btn.title = move.description;
+        btn.disabled = !game.isPlayerTurn || move.pp <= 0;
+        btn.onclick = () => useMove(index);
+        movesDiv.appendChild(btn);
+    });
+}
+
+// 顯示訊息
+function showMessage(text) {
+    const messageDiv = document.getElementById('message');
+    messageDiv.textContent = text;
+}
+
+// 管理員相關函數
+function showAdminLogin() {
+    document.getElementById('overlay').style.display = 'block';
+    document.getElementById('admin-modal').style.display = 'block';
+}
+
+function hideAdminLogin() {
+    document.getElementById('overlay').style.display = 'none';
+    document.getElementById('admin-modal').style.display = 'none';
+    document.getElementById('admin-password').value = '';
+}
+
+function checkAdminPassword() {
+    const password = document.getElementById('admin-password').value;
+    if (password === '123') {
+        hideAdminLogin();
+        isAdminLoggedIn = true;
+        document.getElementById('admin-panel').style.display = 'block';
+        document.getElementById('admin-password').value = '';
+showMessage('管理員模式已啟動');
+    } else {
+        alert('密碼錯誤！');
+    }
+}
+
+function closeAdminPanel() {
+    document.getElementById('admin-panel').style.display = 'none';
+}
+
+// 管理員功能
+function toggleInfiniteHP() {
+    if (!isAdminLoggedIn) return;
+    game.adminMode.infiniteHP = !game.adminMode.infiniteHP;
+    if (game.adminMode.infiniteHP) {
+        game.player.pokemon.currentHp = game.player.pokemon.maxHp;
+        updateDisplay();
+    }
+    showMessage(game.adminMode.infiniteHP ? '無限血量已開啟' : '無限血量已關閉');
+}
+
+function toggleOneHitKO() {
+    if (!isAdminLoggedIn) return;
+    game.adminMode.oneHitKO = !game.adminMode.oneHitKO;
+    showMessage(game.adminMode.oneHitKO ? '一擊必殺已開啟' : '一擊必殺已關閉');
+}
+
+function toggleGodMode() {
+    if (!isAdminLoggedIn) return;
+    game.adminMode.godMode = !game.adminMode.godMode;
+    showMessage(game.adminMode.godMode ? '無敵模式已開啟' : '無敵模式已關閉');
+}
+
+function addExperience() {
+    if (!isAdminLoggedIn) return;
+    const expGain = 100;
+    game.player.exp += expGain;
+    showMessage(`獲得${expGain}點經驗值！`);
+    
+    while (game.player.exp >= game.player.nextLevelExp) {
+        levelUp();
+    }
+    updateDisplay();
+}
+
+function instantLevelUp() {
+    if (!isAdminLoggedIn) return;
+    levelUp();
+    updateDisplay();
+    showMessage(`等級提升至 ${game.player.level} 級！`);
+}
+
+// 重置遊戲
+function resetGame() {
+    game.player = {
+        pokemon: createPokemon(POKEMON_DATA.pikachu, 5),
+        level: 5,
+        exp: 0,
+        nextLevelExp: 100,
+        money: 0,
+        stats: {
+            enemiesDefeated: 0,
+            totalMoney: 0,
+            maxLevel: 5
+        }
+    };
+    
+    document.getElementById('game-over-modal').style.display = 'none';
+    document.getElementById('overlay').style.display = 'none';
+    
+    // 重置管理員狀態
+    isAdminLoggedIn = false;
+    document.getElementById('admin-panel').style.display = 'none';
+    
+    generateNewEnemy();
+    game.isPlayerTurn = true;
+    game.adminMode = {
+        infiniteHP: false,
+        oneHitKO: false,
+        godMode: false
+    };
+    
+    updateDisplay();
+    showMessage('新的遊戲開始！');
+}
+
+// 初始化遊戲
+window.onload = initGame;
+</script>
+</body>
+</html>
